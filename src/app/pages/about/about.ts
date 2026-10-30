@@ -11,6 +11,7 @@ import { MatIconModule } from "@angular/material/icon";
 import { RouterModule } from "@angular/router";
 import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { SettingsService } from "../../core/services/settings.service";
+import { buildWhatsAppUrl } from "../../shared/utils/phone.utils";
 
 @Component({
   selector: "app-about-page",
@@ -27,6 +28,22 @@ export class AboutPage implements OnInit {
   isLoading = signal(true);
 
   siteName = computed(() => this.settingsService.siteName() || "3D Galaxy");
+
+  whatsappUrl = computed(() => {
+    const whatsappSettings = this.settingsService.whatsappSettings() || {};
+    const contact = this.settingsService.contact() || {};
+    const phone =
+      whatsappSettings.adminPhoneNumber ||
+      whatsappSettings.adminPhone ||
+      contact.phone ||
+      "919111381113";
+    const site = this.siteName();
+    const origin =
+      (typeof window !== "undefined" ? window.location.origin : "") ||
+      "https://3dgalaxy.co.in";
+    const message = `Hello ${site}, I was visiting your About Us page (${origin}/about) and would like to get in touch with you regarding your 3D printing products and services.`;
+    return buildWhatsAppUrl(phone, message, "919111381113");
+  });
 
   aboutContent = computed(() => {
     const about = this.settingsService.aboutPage() || {};

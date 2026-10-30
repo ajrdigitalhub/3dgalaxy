@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import prisma from "../config/database";
 import {
@@ -73,7 +74,7 @@ export const register = async (req: Request, res: Response) => {
     const nameParts = (name || "").trim().split(/\s+/);
     const firstName = nameParts[0] || "User";
     const lastName = nameParts.slice(1).join(" ") || "";
-    const userRoleName = roleName || "Customer";
+    const userRoleName = "Customer";
     const accessToken = generateAccessToken({
       id: mockUserId,
       email,
@@ -124,7 +125,8 @@ export const register = async (req: Request, res: Response) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const targetRoleName = roleName || "Customer";
+    // Public registrations are strictly created as Customer. Administrative roles must be provisioned internally.
+    const targetRoleName = "Customer";
     const nameParts = (name || "").trim().split(/\s+/);
     const firstName = nameParts[0] || "User";
     const lastName = nameParts.slice(1).join(" ") || "";
@@ -560,7 +562,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
     }
 
     // Mock token creation since we don't send emails from dry runtime
-    const resetToken = Math.random().toString(36).substr(2, 10).toUpperCase();
+    const resetToken = crypto.randomBytes(4).toString('hex').toUpperCase();
 
     // Store in audit logs for prototype access/debug convenience
     await prisma.auditLog.create({
@@ -582,7 +584,6 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       message: "Reset token generated (mock email dispatch).",
-      debugToken: resetToken, // Exposed for testability during reviews
     });
   } catch (error: any) {
     return res

@@ -461,11 +461,21 @@ export const verifyRazorpayPayment = async (req: Request, res: Response) => {
     const rzConfig = settings.paymentMethods?.razorpay || {};
     const keySecret = (rzConfig.keySecret && rzConfig.keySecret.trim()) || process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_SECRET || '';
 
-    const isMock = razorpay_signature === 'mock_signature' || (razorpay_order_id && razorpay_order_id.startsWith('order_mock_'));
+    const isProd = process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'production';
+    const isMock = !isProd && (razorpay_signature === 'mock_signature' || (razorpay_order_id && razorpay_order_id.startsWith('order_mock_')));
     const isPlaceholderSecret = !keySecret || keySecret === '12345678' || keySecret === 'YOUR_KEY_SECRET';
     
-    // Timing-Safe Signature Verification (only when a genuine keySecret is configured and a server razorpay order exists)
-    if (!isPlaceholderSecret && keySecret && razorpay_signature && !isMock && razorpay_order_id && !razorpay_order_id.startsWith('order_mock_')) {
+    // Timing-Safe Signature Verification
+    if (!isMock) {
+      if (!keySecret || isPlaceholderSecret) {
+        logger.error('Razorpay keySecret not properly configured for payment verification');
+        return res.status(500).json({ success: false, error: 'Payment gateway configuration error' });
+      }
+      if (!razorpay_signature || !razorpay_order_id || !razorpay_payment_id) {
+        return res.status(400).json({ success: false, error: 'Missing payment signature verification parameters' });
+      }
+    }
+    if (!isPlaceholderSecret && keySecret && razorpay_signature && !isMock && razorpay_order_id) {
       const generated = crypto
         .createHmac('sha256', keySecret)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -853,10 +863,24 @@ export const verifyCashfreePayment = async (req: Request, res: Response) => {
       });
     }
 
-    // 4. Create Order atomically
+    // 4. Validate paid amount matches checkout total
     const payload = (checkout.checkoutData as any) || {};
     if (!payload.items || payload.items.length === 0) {
       return res.status(400).json({ error: 'Checkout data contains no items' });
+    }
+    const expectedAmount = Number(payload.totalAmount || 0);
+    const cfPaidAmount = Number(cfData.order_amount || 0);
+    if (expectedAmount > 0 && cfPaidAmount > 0 && Math.abs(expectedAmount - cfPaidAmount) > 0.05) {
+      logger.error('Cashfree order amount mismatch detected', {
+        expectedAmount,
+        cfPaidAmount,
+        checkoutId: checkout.id,
+        successfulOrderId
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'Payment verification failed: Paid amount does not match checkout total.'
+      });
     }
 
     const createdOrder = await prisma.$transaction(async (tx) => {
@@ -1097,17 +1121,24 @@ export const handleRazorpayWebhook = async (req: any, res: Response) => {
     const paymentEntity = payload?.payment?.entity;
     if (webhookSecret) {
       const signature = req.headers['x-razorpay-signature'] as string;
-      if (signature) {
-        const bodyStr = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-        const expected = crypto.createHmac('sha256', webhookSecret).update(bodyStr).digest('hex');
+      if (!signature) {
+        await prisma.paymentWebhookLog.update({
+          where: { id: log.id },
+          data: { status: 'signature_missing' },
+        });
+        return res.status(401).send('Missing webhook signature header');
+      }
+      const rawPayload = (req as any).rawBody || (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
+      const expected = crypto.createHmac('sha256', webhookSecret).update(rawPayload).digest('hex');
+      const sigBuf = Buffer.from(signature, 'utf8');
+      const expBuf = Buffer.from(expected, 'utf8');
 
-        if (expected !== signature) {
-          await prisma.paymentWebhookLog.update({
-            where: { id: log.id },
-            data: { status: 'signature_failed' },
-          });
-          return res.status(400).send('Invalid signature');
-        }
+      if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+        await prisma.paymentWebhookLog.update({
+          where: { id: log.id },
+          data: { status: 'signature_failed' },
+        });
+        return res.status(401).send('Invalid webhook signature');
       }
     }
 
@@ -1208,16 +1239,25 @@ export const handleCashfreeWebhook = async (req: Request, res: Response) => {
     const signature = req.headers['x-webhook-signature'] as string;
     const timestamp = req.headers['x-webhook-timestamp'] as string;
 
-    if (webhookSecret && signature && timestamp) {
-      const data = timestamp + JSON.stringify(req.body);
+    if (webhookSecret) {
+      if (!signature || !timestamp) {
+        await prisma.paymentWebhookLog.update({
+          where: { id: log.id },
+          data: { status: 'signature_missing' },
+        });
+        return res.status(401).send('Missing webhook signature or timestamp');
+      }
+      const data = timestamp + (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
       const generated = crypto.createHmac('sha256', webhookSecret).update(data).digest('base64');
+      const sigBuf = Buffer.from(signature, 'utf8');
+      const genBuf = Buffer.from(generated, 'utf8');
 
-      if (generated !== signature) {
+      if (sigBuf.length !== genBuf.length || !crypto.timingSafeEqual(sigBuf, genBuf)) {
         await prisma.paymentWebhookLog.update({
           where: { id: log.id },
           data: { status: 'signature_failed' },
         });
-        return res.status(400).send('Invalid signature');
+        return res.status(401).send('Invalid webhook signature');
       }
     }
 

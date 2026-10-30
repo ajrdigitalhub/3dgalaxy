@@ -79,6 +79,16 @@ export const getDatabaseUrl = () => {
   return `postgresql://${user}:${password}@${ENV.PG_HOST}:${ENV.PG_PORT}/${ENV.PG_DATABASE}?schema=public&sslmode=${sslMode}&pgbouncer=true`;
 };
 
+// Enforce production secret presence check
+if (ENV.APP_ENV === 'production' || ENV.NODE_ENV === 'production') {
+  if (!process.env.PG_PASSWORD) {
+    console.warn('[SECURITY WARNING] PG_PASSWORD is not explicitly configured via environment variable in production!');
+  }
+  if (!process.env.JWT_SECRET) {
+    console.warn('[SECURITY WARNING] JWT_SECRET is not explicitly configured via environment variable in production!');
+  }
+}
+
 // Always ensure DATABASE_URL matches current ENV configuration
 process.env.DATABASE_URL = getDatabaseUrl();
 

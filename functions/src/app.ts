@@ -108,10 +108,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   );
 
   if (origin) {
-    if (isLocalOrigin || process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin)) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
-      res.setHeader('Access-Control-Allow-Credentials', 'true');
-    } else {
+    const isDomainAllowed =
+      isLocalOrigin ||
+      process.env.NODE_ENV !== 'production' ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.3dgalaxy.co.in') ||
+      origin.endsWith('3dgalaxy.co.in') ||
+      origin.endsWith('.web.app');
+
+    if (isDomainAllowed) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
     }

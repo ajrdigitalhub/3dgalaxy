@@ -517,7 +517,11 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
     const settings = await getWhatsappSettings();
     const signature = req.headers['x-hub-signature-256'] as string;
 
-    if (settings.webhookSecret && signature) {
+    if (settings.webhookSecret) {
+      if (!signature) {
+        logger.warn('[WhatsApp Webhook] Missing x-hub-signature-256 header');
+        return res.status(401).json({ success: false, error: 'Missing webhook signature' });
+      }
       try {
         const rawPayload = (req as any).rawBody || Buffer.from(JSON.stringify(req.body));
         const hash = crypto.createHmac('sha256', settings.webhookSecret).update(rawPayload).digest('hex');
@@ -530,10 +534,12 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           signatureBuffer.length !== expectedBuffer.length ||
           !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
         ) {
-          console.warn(`[WhatsApp Webhook] Signature mismatch. Received: ${signature} | Expected: ${expectedSignature}`);
+          logger.warn(`[WhatsApp Webhook] Signature mismatch. Received: ${signature}`);
+          return res.status(401).json({ success: false, error: 'Invalid webhook signature' });
         }
       } catch (sigErr: any) {
-        console.warn('[WhatsApp Webhook] Signature validation warning:', sigErr.message);
+        logger.error('[WhatsApp Webhook] Signature validation error:', sigErr.message);
+        return res.status(401).json({ success: false, error: 'Signature validation failed' });
       }
     }
 

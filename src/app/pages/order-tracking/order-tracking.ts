@@ -129,55 +129,68 @@ import { LoadingService } from '../../core/services/loading.service';
 
                 <!-- STATE A: IDLE / FORM ENTRY -->
                 <div class="space-y-4 sm:space-y-6" *ngIf="currentState() === 'idle'">
-                  <div class="border-b border-neutral-200/60 dark:border-neutral-800 pb-2 sm:pb-3 flex items-center gap-2">
-                    <span class="text-base sm:text-xl">📦</span>
+                  <div class="border-b border-neutral-200/80 dark:border-neutral-800 pb-2.5 sm:pb-3 flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-orange-500/10 dark:bg-orange-500/20 flex items-center justify-center text-base sm:text-lg shrink-0">
+                      📦
+                    </div>
                     <div>
-                      <h2 class="text-sm sm:text-base font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-100">Track Order</h2>
-                      <p class="text-[9px] sm:text-xs text-neutral-400 dark:text-neutral-500 font-medium">Verify your order credentials below</p>
+                      <h2 class="text-sm sm:text-base font-black uppercase tracking-wider text-neutral-850 dark:text-neutral-100">Track Order</h2>
+                      <p class="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium">Verify your order credentials below</p>
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                    <div class="space-y-1">
-                      <label class="text-[9px] sm:text-[10px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block">Order ID *</label>
-                      <div class="relative">
-                        <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 text-xs sm:text-sm">confirmation_number</mat-icon>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                    <!-- Order ID Field -->
+                    <div class="space-y-1.5">
+                      <label class="text-[10px] sm:text-xs font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1">
+                        Order ID <span class="text-[#d65108]">*</span>
+                      </label>
+                      <div class="relative flex items-center">
+                        <mat-icon class="tracking-field-icon absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none select-none">confirmation_number</mat-icon>
                         <input 
                           type="text" 
                           [(ngModel)]="orderNumber" 
-                          placeholder="e.g. 3DX000X" 
-                          class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg sm:rounded-xl pl-8 sm:pl-9 pr-3 py-2 text-[11px] sm:text-sm focus:ring-2 focus:ring-[#d65108] focus:border-[#d65108] outline-none font-semibold text-neutral-850 dark:text-neutral-100 transition-all"
+                          (keyup.enter)="performTrack()"
+                          placeholder="e.g. 3DX0029" 
+                          autocomplete="off"
+                          autocapitalize="characters"
+                          class="w-full bg-neutral-50/90 dark:bg-neutral-950/80 border border-neutral-200 dark:border-neutral-800 rounded-xl pl-11 pr-3.5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 placeholder:font-normal focus:bg-white dark:focus:bg-neutral-950 focus:border-[#d65108] focus:ring-4 focus:ring-[#d65108]/15 dark:focus:ring-[#d65108]/25 outline-none transition-all shadow-xs"
                         >
                       </div>
                     </div>
 
-                    <div class="space-y-1">
-                      <label class="text-[9px] sm:text-[10px] font-black text-neutral-400 dark:text-neutral-500 uppercase tracking-widest block">Email Address *</label>
-                      <div class="relative">
-                        <mat-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 text-xs sm:text-sm">mail_outline</mat-icon>
+                    <!-- Email Address Field -->
+                    <div class="space-y-1.5">
+                      <label class="text-[10px] sm:text-xs font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-wider flex items-center gap-1">
+                        Email Address <span class="text-[#d65108]">*</span>
+                      </label>
+                      <div class="relative flex items-center">
+                        <mat-icon class="tracking-field-icon absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 pointer-events-none select-none">mail_outline</mat-icon>
                         <input 
                           type="email" 
                           [(ngModel)]="email" 
-                          placeholder="e.g. alex@example.com" 
-                          class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg sm:rounded-xl pl-8 sm:pl-9 pr-3 py-2 text-[11px] sm:text-sm focus:ring-2 focus:ring-[#d65108] focus:border-[#d65108] outline-none font-semibold text-neutral-850 dark:text-neutral-100 transition-all"
+                          (keyup.enter)="performTrack()"
+                          placeholder="e.g. yourname@example.com" 
+                          autocomplete="email"
+                          class="w-full bg-neutral-50/90 dark:bg-neutral-950/80 border border-neutral-200 dark:border-neutral-800 rounded-xl pl-11 pr-3.5 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 placeholder:font-normal focus:bg-white dark:focus:bg-neutral-950 focus:border-[#d65108] focus:ring-4 focus:ring-[#d65108]/15 dark:focus:ring-[#d65108]/25 outline-none transition-all shadow-xs"
                         >
                       </div>
                     </div>
                   </div>
 
                   <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pt-1 sm:pt-2">
-                    <span class="text-[9px] sm:text-[10px] text-neutral-400 dark:text-neutral-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                      <mat-icon class="text-2xs">help_outline</mat-icon>
+                    <span class="order-2 sm:order-1 text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <mat-icon class="tracking-help-icon text-neutral-400 dark:text-neutral-500">help_outline</mat-icon>
                       Need Help? <a [routerLink]="['/about']" class="text-blue-500 hover:underline">Contact Hub</a>
                     </span>
                     <button
                       (click)="performTrack()"
                       (mouseenter)="isButtonHovered.set(true)"
                       (mouseleave)="isButtonHovered.set(false)"
-                      class="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-[#d65108] hover:bg-[#b83200] active:scale-95 text-white text-[10px] sm:text-xs font-black uppercase rounded-lg sm:rounded-xl tracking-wider shadow-md shadow-[#d65108]/30 transition-all flex items-center justify-center gap-2 group shrink-0"
+                      class="order-1 sm:order-2 w-full sm:w-auto px-5 sm:px-7 py-3 bg-[#d65108] hover:bg-[#b83200] active:scale-[0.98] text-white text-xs sm:text-sm font-black uppercase rounded-xl tracking-wider shadow-lg shadow-[#d65108]/25 hover:shadow-[#d65108]/40 transition-all flex items-center justify-center gap-2 group shrink-0"
                     >
                       <span>Track Order</span>
-                      <mat-icon class="text-sm transition-transform duration-300 group-hover:translate-x-1">local_shipping</mat-icon>
+                      <mat-icon class="tracking-btn-icon transition-transform duration-300 group-hover:translate-x-1">local_shipping</mat-icon>
                     </button>
                   </div>
                 </div>
@@ -390,24 +403,29 @@ import { LoadingService } from '../../core/services/loading.service';
             
           </div>
           
-          <!-- 4. PREMIUM TRUCK WHEELS (Mobile Position: Under Cargo Container) -->
-          <div class="truck-wheels flex sm:hidden absolute bottom-[-14px] inset-x-0 justify-between px-8 pointer-events-none">
+          <!-- 4. PREMIUM TRUCK WHEELS & CHASSIS (Mobile Position: Under Cargo Container) -->
+          <div class="truck-wheels flex sm:hidden absolute bottom-[-16px] inset-x-0 justify-between px-7 pointer-events-none z-10">
+            <!-- Chassis connector rail -->
+            <div class="absolute bottom-3 inset-x-9 h-1.5 bg-neutral-850 dark:bg-neutral-950 rounded-full border-t border-neutral-700/60 shadow-xs"></div>
+            
             <!-- Rear Wheel -->
-            <div class="wheel w-10 h-10 bg-neutral-800 dark:bg-neutral-900 rounded-full border-[4px] border-neutral-900 dark:border-neutral-955 flex items-center justify-center shadow-md relative"
+            <div class="wheel w-10 h-10 bg-neutral-900 dark:bg-neutral-950 rounded-full border-[4px] border-neutral-800 dark:border-neutral-900 flex items-center justify-center shadow-lg relative"
                  [class.rotating]="isEntering() || currentState() === 'searching'">
-              <div class="w-5 h-5 rounded-full bg-neutral-300 dark:bg-neutral-700 border border-neutral-400 dark:border-neutral-600 flex items-center justify-center relative">
-                <div class="w-1.5 h-1.5 rounded-full bg-neutral-800 dark:bg-neutral-900"></div>
-                <div class="spoke w-full h-[1px] bg-neutral-500 absolute"></div>
-                <div class="spoke w-[1px] h-full bg-neutral-500 absolute"></div>
+              <div class="w-5 h-5 rounded-full bg-neutral-300 dark:bg-neutral-700 border border-neutral-400 dark:border-neutral-600 flex items-center justify-center shadow-inner relative">
+                <div class="w-2 h-2 rounded-full bg-neutral-800 dark:bg-neutral-900 border border-neutral-500/50"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="w-3.5 h-3.5 rounded-full border border-dashed border-neutral-500/60 dark:border-neutral-400/60"></div>
+                </div>
               </div>
             </div>
             <!-- Front Wheel -->
-            <div class="wheel w-10 h-10 bg-neutral-800 dark:bg-neutral-900 rounded-full border-[4px] border-neutral-900 dark:border-neutral-955 flex items-center justify-center shadow-md relative"
+            <div class="wheel w-10 h-10 bg-neutral-900 dark:bg-neutral-950 rounded-full border-[4px] border-neutral-800 dark:border-neutral-900 flex items-center justify-center shadow-lg relative"
                  [class.rotating]="isEntering() || currentState() === 'searching'">
-              <div class="w-5 h-5 rounded-full bg-neutral-300 dark:bg-neutral-700 border border-neutral-400 dark:border-neutral-600 flex items-center justify-center relative">
-                <div class="w-1.5 h-1.5 rounded-full bg-neutral-800 dark:bg-neutral-900"></div>
-                <div class="spoke w-full h-[1px] bg-neutral-500 absolute"></div>
-                <div class="spoke w-[1px] h-full bg-neutral-500 absolute"></div>
+              <div class="w-5 h-5 rounded-full bg-neutral-300 dark:bg-neutral-700 border border-neutral-400 dark:border-neutral-600 flex items-center justify-center shadow-inner relative">
+                <div class="w-2 h-2 rounded-full bg-neutral-800 dark:bg-neutral-900 border border-neutral-500/50"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="w-3.5 h-3.5 rounded-full border border-dashed border-neutral-500/60 dark:border-neutral-400/60"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -716,6 +734,28 @@ import { LoadingService } from '../../core/services/loading.service';
     .no-scrollbar {
       -ms-overflow-style: none;
       scrollbar-width: none;
+    }
+
+    /* ICON SIZING OVERRIDES FOR MAT-ICON */
+    .tracking-field-icon {
+      width: 18px !important;
+      height: 18px !important;
+      font-size: 18px !important;
+      line-height: 18px !important;
+    }
+
+    .tracking-help-icon {
+      width: 14px !important;
+      height: 14px !important;
+      font-size: 14px !important;
+      line-height: 14px !important;
+    }
+
+    .tracking-btn-icon {
+      width: 18px !important;
+      height: 18px !important;
+      font-size: 18px !important;
+      line-height: 18px !important;
     }
 
     /* RESPONSIVE SCALING & ADAPTABILITY */

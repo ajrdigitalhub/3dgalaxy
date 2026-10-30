@@ -226,7 +226,7 @@ router.post('/address', authenticateToken, async (req: Request, res: Response) =
 });
 
 // Alias: POST /addresses (plural) — used by frontend checkout "saveAddressToAccount"
-router.post('/addresses', authenticateToken, async (req, res) => {
+router.post('/addresses', authenticateToken, async (req: any, res: Response) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -301,7 +301,7 @@ router.post('/addresses', authenticateToken, async (req, res) => {
     });
 
     return res.status(201).json({ success: true, data: parseCustomerAddress(created) });
-  } catch (err) {
+  } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -426,8 +426,30 @@ router.post('/', requireRole(['Admin']), createCustomer);
 router.put('/:id', requireRole(['Admin', 'Manager']), updateCustomer);
 router.delete('/:id', requireRole(['Admin']), deleteCustomer);
 
-router.post('/:customerId/address', manageAddress);
-router.post('/:customerId/wishlist', toggleWishlistItem);
+router.post('/:customerId/address', authenticateToken, async (req: any, res, next) => {
+  const { customerId } = req.params;
+  const user = req.user;
+  const role = (user?.role || '').toLowerCase().replace(/[\s\-_]/g, '');
+  if (role !== 'admin' && role !== 'superadmin' && role !== 'manager') {
+    const cust = await prisma.customer.findUnique({ where: { id: customerId }, select: { userId: true } });
+    if (!cust || cust.userId !== user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized to modify this customer\'s address' });
+    }
+  }
+  return manageAddress(req, res);
+});
+router.post('/:customerId/wishlist', authenticateToken, async (req: any, res, next) => {
+  const { customerId } = req.params;
+  const user = req.user;
+  const role = (user?.role || '').toLowerCase().replace(/[\s\-_]/g, '');
+  if (role !== 'admin' && role !== 'superadmin' && role !== 'manager') {
+    const cust = await prisma.customer.findUnique({ where: { id: customerId }, select: { userId: true } });
+    if (!cust || cust.userId !== user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized to modify this customer\'s wishlist' });
+    }
+  }
+  return toggleWishlistItem(req, res);
+});
 
 router.put('/reviews/:id/approve', requireRole(['Admin', 'Manager']), approveReview);
 

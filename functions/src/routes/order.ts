@@ -24,7 +24,7 @@ router.post('/track', trackOrder);
 router.get('/my-orders', authenticateToken, getMyOrders);
 
 // Orders by customer ID (order history for admin and customer account views)
-router.get('/customer/:customerId', optionalAuthenticateToken, getOrdersByCustomerId);
+router.get('/customer/:customerId', authenticateToken, getOrdersByCustomerId);
 
 // Admin packaging slip PDF download (Admin, Manager, Staff)
 router.get('/:id/packaging-slip', authenticateToken, requireRole(['Admin', 'Manager', 'Staff', 'Super Admin', 'admin', 'super-admin']), getPackagingSlipPDF);

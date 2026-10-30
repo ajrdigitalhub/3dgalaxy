@@ -415,16 +415,25 @@ export async function createServiceEnquiry(req: Request, res: Response): Promise
 export async function getServiceFileContent(req: Request, res: Response): Promise<void> {
   try {
     const { trackingNumber, folder, fileName } = req.params;
-    const decodedFileName = decodeURIComponent(fileName);
+    // Sanitize parameters against path traversal attacks (CWE-22)
+    const safeTracking = path.basename(trackingNumber).replace(/[^a-zA-Z0-9_-]/g, '');
+    const safeFolder = path.basename(folder).replace(/[^a-zA-Z0-9_-]/g, '');
+    const decodedFileName = path.basename(decodeURIComponent(fileName));
+    const safeFileName = path.basename(fileName);
+
+    if (!safeTracking || !safeFolder || !decodedFileName) {
+      res.status(400).json({ error: "Invalid path parameters." });
+      return;
+    }
 
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "*");
 
     const possiblePaths = [
-      path.join(PRIMARY_STORAGE_SERVICES_DIR, trackingNumber, folder, decodedFileName),
-      path.join(PRIMARY_STORAGE_SERVICES_DIR, trackingNumber, folder, fileName),
-      path.join(os.tmpdir(), "storage/services", trackingNumber, folder, decodedFileName),
-      path.join(os.tmpdir(), "storage/services", trackingNumber, folder, fileName),
+      path.join(PRIMARY_STORAGE_SERVICES_DIR, safeTracking, safeFolder, decodedFileName),
+      path.join(PRIMARY_STORAGE_SERVICES_DIR, safeTracking, safeFolder, safeFileName),
+      path.join(os.tmpdir(), "storage/services", safeTracking, safeFolder, decodedFileName),
+      path.join(os.tmpdir(), "storage/services", safeTracking, safeFolder, safeFileName),
     ];
 
     let foundPath = possiblePaths.find((p) => fs.existsSync(p));
@@ -461,14 +470,12 @@ export async function getServiceFileContent(req: Request, res: Response): Promis
       }
 
       if (!downloaded) {
-        try {
-          fs.writeFileSync(
-            foundPath,
-            `3D Galaxy Service File Telemetry for ${trackingNumber}\nFile: ${decodedFileName}\nCreated: ${new Date().toISOString()}`
-          );
-        } catch (writeErr) {
-          console.warn("[getServiceFileContent] Local telemetry file write warning:", writeErr);
-        }
+        console.warn(`[getServiceFileContent] File not found in Firebase Storage: services/${trackingNumber}/${folder}/${decodedFileName}`);
+        res.status(404).json({
+          error: "File not found.",
+          details: `The file "${decodedFileName}" could not be located in Firebase Storage at services/${trackingNumber}/${folder}/. Please re-upload the file.`
+        });
+        return;
       }
     }
 
