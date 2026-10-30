@@ -168,13 +168,13 @@ interface AbandonedCheckout {
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Search Customer / Contact</label>
             <div class="relative">
-              <input type="text" [(ngModel)]="searchKeyword" (ngModelChange)="loadData()" placeholder="Enter name, email, phone..." class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
+              <input type="text" [ngModel]="searchKeyword()" (ngModelChange)="searchKeyword.set($event); loadData()" placeholder="Enter name, email, phone..." class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
             </div>
           </div>
 
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Recovery Status</label>
-            <select [(ngModel)]="statusFilter" (change)="loadData()" class="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold cursor-pointer transition-all">
+            <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event); loadData()" class="w-full px-3 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold cursor-pointer transition-all">
               <option value="">All Statuses</option>
               <option value="ACTIVE">Active (Pending)</option>
               <option value="RECOVERED">Recovered (Converted)</option>
@@ -184,12 +184,12 @@ interface AbandonedCheckout {
 
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Min Value (₹)</label>
-            <input type="number" [(ngModel)]="minValueFilter" (ngModelChange)="loadData()" placeholder="Minimum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
+            <input type="number" [ngModel]="minValueFilter()" (ngModelChange)="onMinValChange($event)" placeholder="Minimum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
           </div>
 
           <div class="space-y-1">
             <label class="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1">Max Value (₹)</label>
-            <input type="number" [(ngModel)]="maxValueFilter" (ngModelChange)="loadData()" placeholder="Maximum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
+            <input type="number" [ngModel]="maxValueFilter()" (ngModelChange)="onMaxValChange($event)" placeholder="Maximum Amount" class="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold transition-all">
           </div>
         </div>
 
@@ -486,10 +486,19 @@ export class AdminAbandonedCheckoutsTab implements OnInit {
 
   loadData() {
     let params: any = {};
-    if (this.searchKeyword()) params.search = this.searchKeyword();
+    if (this.searchKeyword()) {
+      params.search = this.searchKeyword();
+      params.searchQuery = this.searchKeyword();
+    }
     if (this.statusFilter()) params.status = this.statusFilter();
-    if (this.minValueFilter() !== null) params.minTotal = this.minValueFilter();
-    if (this.maxValueFilter() !== null) params.maxTotal = this.maxValueFilter();
+    if (this.minValueFilter() !== null) {
+      params.minTotal = this.minValueFilter();
+      params.minVal = this.minValueFilter();
+    }
+    if (this.maxValueFilter() !== null) {
+      params.maxTotal = this.maxValueFilter();
+      params.maxVal = this.maxValueFilter();
+    }
 
     this.admin.ds.api.get<any>('/admin/abandoned-checkouts', params).subscribe({
       next: (res: any) => {
@@ -526,6 +535,16 @@ export class AdminAbandonedCheckoutsTab implements OnInit {
       },
       error: (err) => console.error('Failed to load analytics:', err)
     });
+  }
+
+  onMinValChange(val: any) {
+    this.minValueFilter.set(val === '' || val === null || isNaN(Number(val)) ? null : Number(val));
+    this.loadData();
+  }
+
+  onMaxValChange(val: any) {
+    this.maxValueFilter.set(val === '' || val === null || isNaN(Number(val)) ? null : Number(val));
+    this.loadData();
   }
 
   resetFilters() {

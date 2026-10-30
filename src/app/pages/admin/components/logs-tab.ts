@@ -550,7 +550,7 @@ export class AdminLogsTab implements OnInit {
   }
 
   private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    const token = localStorage.getItem('access_token') || localStorage.getItem('token') || localStorage.getItem('accessToken');
     return new HttpHeaders({
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     });

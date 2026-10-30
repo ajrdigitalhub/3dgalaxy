@@ -2433,7 +2433,7 @@ export class DatastoreService {
               ? `${o.customer.user.firstName} ${o.customer.user.lastName || ''}`.trim()
               : o.customer?.user?.name || o.guestName || o.customerName || 'Guest',
             customerPhone: o.customer?.phone || o.customer?.user?.phone || o.guestPhone || o.customerPhone || 'N/A',
-            customerType: o.customer?.customerType || o.customerType || 'retail',
+            customerType: (o.customer?.user?.role === 'Guest' || o.customer?.customerType === 'guest' || !o.customerId || !o.customer) ? 'guest' : (o.customer?.customerType || 'retail'),
             status: o.status ? o.status.toLowerCase() : 'pending',
             grandTotal: Number(o.totalAmount) || 0,
           })));

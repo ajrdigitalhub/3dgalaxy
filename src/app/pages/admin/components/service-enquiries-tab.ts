@@ -85,6 +85,16 @@ export class AdminServiceEnquiriesTab implements OnInit {
     this.loadEnquiries();
   }
 
+  private searchTimeout: any;
+  onSearchChange() {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+    this.searchTimeout = setTimeout(() => {
+      this.loadEnquiries();
+    }, 300);
+  }
+
   loadEnquiries() {
     this.enquiryService
       .getAdminEnquiries(this.selectedStatusFilter(), this.searchQuery)

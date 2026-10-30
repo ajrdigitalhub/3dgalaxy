@@ -370,15 +370,15 @@ export class AdminNotificationCenterTabComponent implements OnInit {
     const term = this.searchTerm().trim().toLowerCase();
 
     if (cat !== "all") {
-      list = list.filter((n) => n.category.toLowerCase() === cat);
+      list = list.filter((n) => (n.category || '').toLowerCase() === cat);
     }
 
     if (term) {
       list = list.filter(
         (n) =>
-          n.title.toLowerCase().includes(term) ||
-          n.body.toLowerCase().includes(term) ||
-          n.eventKey.toLowerCase().includes(term)
+          (n.title || '').toLowerCase().includes(term) ||
+          (n.body || '').toLowerCase().includes(term) ||
+          (n.eventKey || '').toLowerCase().includes(term)
       );
     }
 

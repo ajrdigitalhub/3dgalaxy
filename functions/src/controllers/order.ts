@@ -144,70 +144,133 @@ export const getOrders = async (req: Request, res: Response) => {
     const search = req.query.search as string;
     const status = req.query.status as string;
     const customerType = req.query.customerType as string;
-    const minAmount = req.query.minAmount ? parseFloat(req.query.minAmount as string) : undefined;
-    const maxAmount = req.query.maxAmount ? parseFloat(req.query.maxAmount as string) : undefined;
+    const minAmount = req.query.minAmount !== undefined && req.query.minAmount !== ''
+      ? parseFloat(req.query.minAmount as string)
+      : undefined;
+    const maxAmount = req.query.maxAmount !== undefined && req.query.maxAmount !== ''
+      ? parseFloat(req.query.maxAmount as string)
+      : undefined;
     const dateFrom = req.query.dateFrom as string;
     const dateTo = req.query.dateTo as string;
 
-    const where: any = {};
+    const andConditions: any[] = [];
 
-    if (search) {
-      where.OR = [
-        { orderNumber: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } },
-        {
-          customer: {
-            OR: [
-              { phone: { contains: search, mode: 'insensitive' } },
-              { customerType: { contains: search, mode: 'insensitive' } },
-              {
-                user: {
-                  OR: [
-                    { firstName: { contains: search, mode: 'insensitive' } },
-                    { lastName: { contains: search, mode: 'insensitive' } },
-                    { email: { contains: search, mode: 'insensitive' } },
-                    { mobile: { contains: search, mode: 'insensitive' } }
-                  ]
+    if (search && (search as string).trim()) {
+      const s = (search as string).trim();
+      andConditions.push({
+        OR: [
+          { orderNumber: { contains: s, mode: 'insensitive' } },
+          { notes: { contains: s, mode: 'insensitive' } },
+          { paymentMethod: { contains: s, mode: 'insensitive' } },
+          { transactionId: { contains: s, mode: 'insensitive' } },
+          { paymentId: { contains: s, mode: 'insensitive' } },
+          {
+            customer: {
+              OR: [
+                { phone: { contains: s, mode: 'insensitive' } },
+                {
+                  user: {
+                    OR: [
+                      { firstName: { contains: s, mode: 'insensitive' } },
+                      { lastName: { contains: s, mode: 'insensitive' } },
+                      { email: { contains: s, mode: 'insensitive' } },
+                      { mobile: { contains: s, mode: 'insensitive' } }
+                    ]
+                  }
                 }
+              ]
+            }
+          },
+          {
+            shippingAddress: {
+              OR: [
+                { addressLine1: { contains: s, mode: 'insensitive' } },
+                { city: { contains: s, mode: 'insensitive' } },
+                { state: { contains: s, mode: 'insensitive' } },
+                { postalCode: { contains: s, mode: 'insensitive' } }
+              ]
+            }
+          },
+          {
+            shipments: {
+              some: {
+                OR: [
+                  { trackingNumber: { contains: s, mode: 'insensitive' } },
+                  { courierPartner: { contains: s, mode: 'insensitive' } },
+                  { courierDisplayName: { contains: s, mode: 'insensitive' } }
+                ]
               }
-            ]
+            }
           }
-        },
-        {
-          shippingAddress: {
-            OR: [
-              { addressLine1: { contains: search, mode: 'insensitive' } },
-              { city: { contains: search, mode: 'insensitive' } },
-              { state: { contains: search, mode: 'insensitive' } },
-              { postalCode: { contains: search, mode: 'insensitive' } }
-            ]
-          }
-        }
-      ];
+        ]
+      });
     }
 
-    if (status && status !== 'ALL') {
-      where.status = status;
+    if (status && status !== 'ALL' && (status as string).trim()) {
+      const st = (status as string).trim();
+      andConditions.push({
+        status: { equals: st, mode: 'insensitive' }
+      });
     }
 
-    if (customerType && customerType !== 'ALL') {
-      where.customer = {
-        ...where.customer,
-        customerType: { equals: customerType, mode: 'insensitive' }
-      };
+    if (customerType && customerType !== 'ALL' && (customerType as string).trim()) {
+      const norm = (customerType as string).trim().toUpperCase();
+      if (norm === 'GUEST') {
+        andConditions.push({
+          OR: [
+            { customerId: null },
+            { customer: { customerType: { equals: 'guest', mode: 'insensitive' } } },
+            { customer: { user: { role: { equals: 'Guest', mode: 'insensitive' } } } }
+          ]
+        });
+      } else if (norm === 'REG' || norm === 'REGISTERED') {
+        andConditions.push({
+          customerId: { not: null },
+          customer: {
+            customerType: { notIn: ['guest', 'GUEST'] },
+            user: { role: { not: 'Guest' } }
+          }
+        });
+      } else {
+        andConditions.push({
+          customer: {
+            customerType: { equals: (customerType as string).trim(), mode: 'insensitive' }
+          }
+        });
+      }
     }
 
     if (minAmount !== undefined || maxAmount !== undefined) {
-      where.totalAmount = {};
-      if (minAmount !== undefined) where.totalAmount.gte = minAmount;
-      if (maxAmount !== undefined) where.totalAmount.lte = maxAmount;
+      const amountCond: any = {};
+      if (minAmount !== undefined && !isNaN(minAmount)) amountCond.gte = minAmount;
+      if (maxAmount !== undefined && !isNaN(maxAmount)) amountCond.lte = maxAmount;
+      if (Object.keys(amountCond).length > 0) {
+        andConditions.push({ totalAmount: amountCond });
+      }
     }
 
     if (dateFrom || dateTo) {
-      where.createdAt = {};
-      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
-      if (dateTo) where.createdAt.lte = new Date(dateTo);
+      const dateCond: any = {};
+      if (dateFrom && (dateFrom as string).trim()) {
+        const dFrom = new Date((dateFrom as string).trim());
+        if (!isNaN(dFrom.getTime())) {
+          dFrom.setHours(0, 0, 0, 0);
+          dateCond.gte = dFrom;
+        }
+      }
+      if (dateTo && (dateTo as string).trim()) {
+        const dTo = new Date((dateTo as string).trim());
+        if (!isNaN(dTo.getTime())) {
+          dTo.setHours(23, 59, 59, 999);
+          dateCond.lte = dTo;
+        }
+      }
+      if (Object.keys(dateCond).length > 0) {
+        andConditions.push({ createdAt: dateCond });
+      }
     }
+
+    const where: any = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const [total, list] = await Promise.all([
       prisma.order.count({ where }),
@@ -222,6 +285,7 @@ export const getOrders = async (req: Request, res: Response) => {
           },
           shippingAddress: true,
           billingAddress: true,
+          shipments: true,
           items: {
             include: {
               product: {

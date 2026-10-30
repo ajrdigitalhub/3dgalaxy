@@ -5978,31 +5978,40 @@ export class AdminCatalogTab {
   }
 
   freeShippingCount = computed(() => {
-    const list = this.admin.ds.products() || [];
+    let list = this.admin.ds.products() || [];
     return list.filter((p: any) => this.isFreeShippingApplicable(p)).length;
   });
 
   lowStockCount = computed(() => {
-    const list = this.admin.ds.products() || [];
+    let list = this.admin.ds.products() || [];
     return list.filter((p: any) => (p.stock || 0) > 0 && (p.stock || 0) <= 5).length;
   });
 
   outOfStockCount = computed(() => {
-    const list = this.admin.ds.products() || [];
+    let list = this.admin.ds.products() || [];
     return list.filter((p: any) => (p.stock || 0) <= 0).length;
   });
 
   filteredProducts = computed(() => {
-    const list = this.admin.ds.products() || [];
+    let list = this.admin.ds.products() || [];
     const filter = this.productFilterType();
     if (filter === 'free_shipping') {
-      return list.filter((p: any) => this.isFreeShippingApplicable(p));
+      list = list.filter((p: any) => this.isFreeShippingApplicable(p));
     }
     if (filter === 'low_stock') {
-      return list.filter((p: any) => (p.stock || 0) > 0 && (p.stock || 0) <= 5);
+      list = list.filter((p: any) => (p.stock || 0) > 0 && (p.stock || 0) <= 5);
     }
     if (filter === 'out_of_stock') {
-      return list.filter((p: any) => (p.stock || 0) <= 0);
+      list = list.filter((p: any) => (p.stock || 0) <= 0);
+    }
+    const q = (this.admin.searchQueryProducts() || '').trim().toLowerCase();
+    if (q) {
+      list = list.filter((p: any) =>
+        (p.name || '').toLowerCase().includes(q) ||
+        (p.sku || '').toLowerCase().includes(q) ||
+        (p.category || '').toLowerCase().includes(q) ||
+        (p.brand || '').toLowerCase().includes(q)
+      );
     }
     return list;
   });

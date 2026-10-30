@@ -876,28 +876,31 @@ export async function getAdminServiceEnquiries(req: Request, res: Response): Pro
     const statusFilter = (req.query.status as string) || "";
     const search = (req.query.search as string || "").toLowerCase().trim();
 
-    let enquiries = loadEnquiries().filter((e) => !e.isDeleted);
+    const allActiveEnquiries = loadEnquiries().filter((e) => !e.isDeleted);
+    let enquiries = [...allActiveEnquiries];
 
     if (statusFilter && statusFilter !== "all") {
-      enquiries = enquiries.filter((e) => e.status === statusFilter);
+      const sf = statusFilter.toLowerCase();
+      enquiries = enquiries.filter((e) => e.status && e.status.toLowerCase() === sf);
     }
 
     if (search) {
       enquiries = enquiries.filter(
         (e) =>
-          e.id.toLowerCase().includes(search) ||
-          e.trackingNumber.toLowerCase().includes(search) ||
-          e.customerName.toLowerCase().includes(search) ||
-          e.customerEmail.toLowerCase().includes(search) ||
-          e.modelName.toLowerCase().includes(search)
+          (e.id && e.id.toLowerCase().includes(search)) ||
+          (e.trackingNumber && e.trackingNumber.toLowerCase().includes(search)) ||
+          (e.customerName && e.customerName.toLowerCase().includes(search)) ||
+          (e.customerEmail && e.customerEmail.toLowerCase().includes(search)) ||
+          (e.customerPhone && e.customerPhone.toLowerCase().includes(search)) ||
+          (e.modelName && e.modelName.toLowerCase().includes(search))
       );
     }
 
-    const totalEnquiries = enquiries.length;
-    const pendingQuotes = enquiries.filter((e) => e.status === "submitted" || e.status === "received" || e.status === "file_review").length;
-    const printingActive = enquiries.filter((e) => e.status === "printing_started" || e.status === "quality_check").length;
-    const completed = enquiries.filter((e) => e.status === "completed").length;
-    const totalRevenue = enquiries
+    const totalEnquiries = allActiveEnquiries.length;
+    const pendingQuotes = allActiveEnquiries.filter((e) => e.status === "submitted" || e.status === "received" || e.status === "file_review").length;
+    const printingActive = allActiveEnquiries.filter((e) => e.status === "printing_started" || e.status === "quality_check").length;
+    const completed = allActiveEnquiries.filter((e) => e.status === "completed").length;
+    const totalRevenue = allActiveEnquiries
       .filter((e) => e.status === "payment_completed" || e.status === "completed" || e.status === "shipped")
       .reduce((acc, curr) => acc + (curr.quotation?.total || curr.estimatedCost || 0), 0);
 

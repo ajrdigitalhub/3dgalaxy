@@ -94,19 +94,23 @@ export const getCustomers = async (req: Request, res: Response) => {
 
     // Apply Customer Type Filter
     if (customerType) {
-      where.customerType = customerType;
+      where.customerType = { equals: customerType.trim(), mode: 'insensitive' };
     }
 
     // Apply Status Filter
     if (status) {
-      where.user.isActive = status === 'active';
+      where.user.isActive = status.toLowerCase() === 'active';
     }
 
     // Apply Date Range Filter
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
-      if (dateTo) where.createdAt.lte = new Date(dateTo);
+      if (dateTo) {
+        const toD = new Date(dateTo);
+        toD.setHours(23, 59, 59, 999);
+        where.createdAt.lte = toD;
+      }
     }
 
     // Determine Sort options

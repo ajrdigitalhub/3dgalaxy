@@ -108,11 +108,13 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                     <input type="number"
                            [value]="minAmount() === null ? '' : minAmount()"
                            (input)="setMinAmt($event)"
+                           (change)="setMinAmt($event)"
                            placeholder="Min"
                            class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
                     <input type="number"
                            [value]="maxAmount() === null ? '' : maxAmount()"
                            (input)="setMaxAmt($event)"
+                           (change)="setMaxAmt($event)"
                            placeholder="Max"
                            class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
                   </div>
@@ -125,10 +127,12 @@ import { PackagingSlipDialogComponent } from './packaging-slip-dialog/packaging-
                     <input type="date"
                            [value]="dateFrom()"
                            (input)="onDateFromChange($any($event.target).value)"
+                           (change)="onDateFromChange($any($event.target).value)"
                            class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
                     <input type="date"
                            [value]="dateTo()"
                            (input)="onDateToChange($any($event.target).value)"
+                           (change)="onDateToChange($any($event.target).value)"
                            class="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs outline-none">
                   </div>
                 </div>

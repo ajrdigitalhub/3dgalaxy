@@ -587,11 +587,11 @@ export class AdminReviewsTabComponent implements OnInit {
     if (q) {
       list = list.filter(
         (r) =>
-          r.productName.toLowerCase().includes(q) ||
-          r.userName.toLowerCase().includes(q) ||
-          r.userEmail.toLowerCase().includes(q) ||
-          r.title.toLowerCase().includes(q) ||
-          r.comment.toLowerCase().includes(q)
+          (r.productName || '').toLowerCase().includes(q) ||
+          (r.userName || '').toLowerCase().includes(q) ||
+          (r.userEmail || '').toLowerCase().includes(q) ||
+          (r.title || '').toLowerCase().includes(q) ||
+          (r.comment || '').toLowerCase().includes(q)
       );
     }
 
