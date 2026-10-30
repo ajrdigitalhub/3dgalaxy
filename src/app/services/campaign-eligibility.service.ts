@@ -412,6 +412,14 @@ export class CampaignEligibilityService {
       return;
     }
 
+    const timeSincePrompt = Date.now() - this.ns.promptDismissedTime();
+    if (this.ns.promptDismissedTime() > 0 && timeSincePrompt < 8000) {
+      this.devLog('Notification prompt was recently active; deferring promo popup evaluation.');
+      this.isEvaluating.set(false);
+      setTimeout(() => this.scheduleEvaluation('prompt_cooldown_elapsed'), 8000 - timeSincePrompt + 1000);
+      return;
+    }
+
     const currentPath = this.router.url;
     const visitorState = this.getVisitorState();
     const isMobile = this.isMobile();

@@ -49,12 +49,18 @@ export class NotificationService {
   publicFcmConfig = signal<any>(null);
 
   public isPromptVisibleSignal = signal<boolean>(false);
+  public isAdPopupActive = signal<boolean>(false);
+  public adPopupDismissedTime = signal<number>(0);
+  public promptDismissedTime = signal<number>(0);
   private showPromptSubject = new BehaviorSubject<boolean>(false);
   private registrationKey = "";
   private serviceWorkerRegistrationPromise: Promise<ServiceWorkerRegistration> | null = null;
   showPrompt$ = this.showPromptSubject.asObservable();
 
   public setPromptVisibility(visible: boolean) {
+    if (!visible) {
+      this.promptDismissedTime.set(Date.now());
+    }
     this.isPromptVisibleSignal.set(visible);
     this.showPromptSubject.next(visible);
   }
@@ -200,8 +206,24 @@ export class NotificationService {
     }
 
     let triggered = false;
+    let pendingTriggerTimer: any = null;
     const triggerShow = () => {
       if (triggered) return;
+
+      // 1. Mutual exclusion: do not show if an advertisement popup is active
+      if (this.isAdPopupActive()) {
+        if (pendingTriggerTimer) clearTimeout(pendingTriggerTimer);
+        pendingTriggerTimer = setTimeout(() => triggerShow(), 4000);
+        return;
+      }
+
+      // 2. Cooldown buffer: do not show if an advertisement was closed less than 8 seconds ago
+      const timeSinceAd = Date.now() - this.adPopupDismissedTime();
+      if (this.adPopupDismissedTime() > 0 && timeSinceAd < 8000) {
+        if (pendingTriggerTimer) clearTimeout(pendingTriggerTimer);
+        pendingTriggerTimer = setTimeout(() => triggerShow(), 8000 - timeSinceAd + 1000);
+        return;
+      }
       triggered = true;
       this.setPromptVisibility(true);
       window.removeEventListener('scroll', scrollHandler);
