@@ -53,8 +53,10 @@
                 >Explore Products</a
               >
               <a
-                routerLink="/contact"
-                class="rounded-full border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-blue-500 hover:text-blue-600 dark:border-neutral-700 dark:text-neutral-200"
+                [href]="whatsappUrl()"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="rounded-full border border-neutral-300 px-5 py-3 text-sm font-semibold text-neutral-700 transition hover:border-emerald-500 hover:text-emerald-600 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-emerald-500 dark:hover:text-emerald-400 inline-flex items-center gap-2"
                 >Contact Us</a
               >
             </div>
@@ -313,6 +315,20 @@
                 [href]="'tel:' + aboutContent().contact.phone"
                 class="mt-1 inline-flex text-blue-600 dark:text-blue-300"
                 >{{ aboutContent().contact.phone }}</a
+              >
+            </div>
+            <div
+              class="rounded-[1.25rem] border border-neutral-200/70 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/70"
+            >
+              <p class="font-semibold text-neutral-950 dark:text-white">
+                WhatsApp
+              </p>
+              <a
+                [href]="whatsappUrl()"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="mt-1 inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
+                >Chat on WhatsApp &rarr;</a
               >
             </div>
             <div

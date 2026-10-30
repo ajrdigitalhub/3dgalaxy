@@ -34,10 +34,14 @@ router.get("/file/:fileId", getServiceFileById);
 router.post("/file/download", downloadServiceFile);
 router.delete("/file/:fileId", deleteServiceFile);
 
+import { authenticateToken, requireRole } from "../middleware/auth";
+
+const adminEnquiryGuard = [authenticateToken, requireRole(['Admin', 'Super Admin', 'Manager'])];
+
 // Admin Endpoints
-router.get("/", getAdminServiceEnquiries);
-router.put("/:id", updateAdminServiceEnquiry);
-router.post("/quote", generateServiceQuotation);
-router.delete("/:id", deleteAdminServiceEnquiry);
+router.get("/", ...adminEnquiryGuard, getAdminServiceEnquiries);
+router.put("/:id", ...adminEnquiryGuard, updateAdminServiceEnquiry);
+router.post("/quote", ...adminEnquiryGuard, generateServiceQuotation);
+router.delete("/:id", ...adminEnquiryGuard, deleteAdminServiceEnquiry);
 
 export default router;

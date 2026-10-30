@@ -55,7 +55,14 @@ async function main() {
       "whatsapp_enabled" BOOLEAN NOT NULL DEFAULT false,
       "email_enabled" BOOLEAN NOT NULL DEFAULT false,
       "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );`
+    );`,
+
+    // Settings table unique constraint for upsert ON CONFLICT
+    `DO $$ BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'settings_setting_key_unique') THEN
+        ALTER TABLE "settings" ADD CONSTRAINT "settings_setting_key_unique" UNIQUE USING INDEX "settings_setting_key_key";
+      END IF;
+    END $$;`
   ];
 
   for (const sql of ddlStatements) {

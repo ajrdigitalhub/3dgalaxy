@@ -17,7 +17,9 @@
     "uploadedAt": "2026-08-11T18:30:40.712Z",
     "version": 1,
     "isLatest": true,
-    "downloadCount": 0
+    "downloadCount": 1,
+    "lastDownloadedAt": "2026-10-30T18:23:19.021Z",
+    "lastDownloadedBy": "Admin Staff"
   },
   {
     "id": "FILE-1785580609022",
@@ -157,13 +159,14 @@
     "fileSize": "0.7 MB",
     "sizeBytes": 1048576,
     "storagePath": "services/TRK-765286/original/yamaha order.stl",
-    "downloadUrl": "/api/services/file/stream/TRK-765286/original/yamaha%20order.stl",
+    "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/ajr3dgalaxy.firebasestorage.app/o/services%2FTRK-765286%2Foriginal%2Fyamaha%20order.stl?alt=media",
     "uploadedBy": "admin123@gmail.com",
     "uploadedAt": "2026-07-20T19:02:57.326Z",
     "version": 1,
     "isLatest": true,
-    "downloadCount": 2,
-    "lastDownloadedAt": "2026-07-20T19:04:38.042Z"
+    "downloadCount": 3,
+    "lastDownloadedAt": "2026-10-30T18:23:45.739Z",
+    "lastDownloadedBy": "Admin Staff"
   },
   {
     "id": "FILE-1784573773724",

@@ -11,6 +11,7 @@ export interface AuthenticatedRequest extends Request {
     email: string;
     role: string;
     permissions: string[];
+    customerId?: string;
   };
 }
 
@@ -28,51 +29,21 @@ export const authenticateToken = async (
     token = String(req.headers['x-access-token']);
   }
 
-  const isAdminRoute =
-    req.originalUrl?.includes('/admin') ||
-    req.baseUrl?.includes('/admin') ||
-    req.path?.includes('/admin') ||
-    req.headers['x-admin-portal'] === 'true' ||
-    Boolean(req.headers['referer']?.includes('/admin'));
-
   if (!token || token === 'undefined' || token === 'null') {
-    if (isAdminRoute || process.env.NODE_ENV !== 'production') {
-      req.user = {
-        id: 'admin-default-id',
-        email: 'admin@3dgalaxy.com',
-        role: 'Admin',
-        permissions: ['*'],
-      };
-      return next();
-    }
-    return res.status(401).json({ error: 'Access token required' });
+    return res.status(401).json({ success: false, error: 'Access token required' });
   }
 
   try {
-    let decoded: any = null;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch {
-      // Fallback: decode without signature verification if custom/dev/firebase token
-      decoded = jwt.decode(token);
-    }
-
-    if (!decoded && (isAdminRoute || process.env.NODE_ENV !== 'production')) {
-      req.user = {
-        id: 'admin-default-id',
-        email: 'admin@3dgalaxy.com',
-        role: 'Admin',
-        permissions: ['*'],
-      };
-      return next();
-    }
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     if (!decoded) {
-      return res.status(403).json({ error: 'Invalid access token' });
+      return res.status(401).json({ success: false, error: 'Invalid access token' });
     }
 
-    const userId = decoded.id || decoded.sub || 'admin-user-id';
-    const userRole = decoded.role || decoded.user_role || (isAdminRoute ? 'Admin' : 'Customer');
+    const userId = decoded.id || decoded.sub;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: 'Invalid token subject' });
+    }
 
     const cacheKey = `auth_user_${userId}`;
     let cachedUser = sysCache.get(cacheKey);
@@ -100,37 +71,34 @@ export const authenticateToken = async (
       }
     }
 
-    if (user && user.isActive !== false) {
+    if (user) {
+      if (user.isActive === false) {
+        return res.status(403).json({ success: false, error: 'User account is deactivated' });
+      }
+
       const userPayload = {
         id: user.id,
         email: user.email,
-        role: user.role || userRole || 'Admin',
-        permissions: ['*'],
+        role: user.role || decoded.role || 'Customer',
+        permissions: ['Admin', 'Super Admin', 'Manager'].includes(user.role) ? ['*'] : [],
+        customerId: user.customer?.id,
       };
       sysCache.set(cacheKey, userPayload, 300);
       req.user = userPayload;
       return next();
     }
 
+    // For fallback demo accounts or verified tokens where DB is unavailable
     const fallbackPayload = {
       id: userId,
-      email: decoded.email || 'admin@3dgalaxy.com',
-      role: userRole || 'Admin',
-      permissions: ['*'],
+      email: decoded.email || '',
+      role: decoded.role || 'Customer',
+      permissions: ['Admin', 'Super Admin', 'Manager'].includes(decoded.role) ? ['*'] : [],
     };
     req.user = fallbackPayload;
     return next();
   } catch (error) {
-    if (isAdminRoute || process.env.NODE_ENV !== 'production') {
-      req.user = {
-        id: 'admin-default-id',
-        email: 'admin@3dgalaxy.com',
-        role: 'Admin',
-        permissions: ['*'],
-      };
-      return next();
-    }
-    return res.status(403).json({ error: 'Invalid or expired access token' });
+    return res.status(401).json({ success: false, error: 'Invalid or expired access token' });
   }
 };
 
@@ -150,12 +118,7 @@ export const optionalAuthenticateToken = async (
   }
 
   try {
-    let decoded: any = null;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-    } catch {
-      decoded = jwt.decode(token);
-    }
+    const decoded: any = jwt.verify(token, JWT_SECRET);
 
     let user: any = null;
     if (decoded && decoded.id) {
@@ -179,45 +142,27 @@ export const optionalAuthenticateToken = async (
         id: user.id,
         email: user.email,
         role: user.role || decoded?.role || 'Customer',
-        permissions: [],
+        permissions: ['Admin', 'Super Admin', 'Manager'].includes(user.role) ? ['*'] : [],
+        customerId: user.customer?.id,
       };
-    } else if (decoded && (decoded.id || decoded.email)) {
+    } else if (decoded && decoded.id) {
       req.user = {
-        id: decoded.id || 'guest-id',
+        id: decoded.id,
         email: decoded.email || '',
         role: decoded.role || 'Customer',
-        permissions: [],
+        permissions: ['Admin', 'Super Admin', 'Manager'].includes(decoded.role) ? ['*'] : [],
       };
     }
   } catch (error) {
-    // Proceed as guest if invalid or expired token
+    // Proceed as unauthenticated guest if invalid or expired token
   }
-  next();
+  return next();
 };
 
 export const requirePermission = (permission: string) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const isAdminRoute =
-      req.originalUrl?.includes('/admin') ||
-      req.baseUrl?.includes('/admin') ||
-      req.path?.includes('/admin') ||
-      req.headers['x-admin-portal'] === 'true' ||
-      Boolean(req.headers['referer']?.includes('/admin'));
-
-    if (isAdminRoute) {
-      if (!req.user) {
-        req.user = {
-          id: 'admin-default-id',
-          email: 'admin@3dgalaxy.com',
-          role: 'Admin',
-          permissions: ['*'],
-        };
-      }
-      return next();
-    }
-
     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized navigation' });
+      return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
     const { role, permissions } = req.user;
@@ -231,40 +176,19 @@ export const requirePermission = (permission: string) => {
       return next();
     }
 
-    return res.status(403).json({ error: 'Insufficient permissions for this operational endpoint' });
+    return res.status(403).json({ success: false, error: 'Insufficient permissions for this operational endpoint' });
   };
 };
 
 export const requireRole = (allowedRoles: string[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const isAdminRoute =
-      req.originalUrl?.includes('/admin') ||
-      req.baseUrl?.includes('/admin') ||
-      req.path?.includes('/admin') ||
-      req.headers['x-admin-portal'] === 'true' ||
-      Boolean(req.headers['referer']?.includes('/admin'));
-
-    if (isAdminRoute) {
-      if (!req.user) {
-        req.user = {
-          id: 'admin-default-id',
-          email: 'admin@3dgalaxy.com',
-          role: 'Admin',
-          permissions: ['*'],
-        };
-      } else {
-        req.user.role = 'Admin';
-      }
-      return next();
-    }
-
     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized navigation' });
+      return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
     const { role } = req.user;
     if (!role) {
-      return res.status(403).json({ error: 'Insufficient role access' });
+      return res.status(403).json({ success: false, error: 'Insufficient role access' });
     }
 
     const normalizedUserRole = role.toLowerCase().replace(/[\s\-_]/g, '');
@@ -279,6 +203,6 @@ export const requireRole = (allowedRoles: string[]) => {
       return next();
     }
 
-    return res.status(403).json({ error: 'Insufficient role access' });
+    return res.status(403).json({ success: false, error: 'Insufficient role access' });
   };
 };

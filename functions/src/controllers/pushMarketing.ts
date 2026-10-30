@@ -68,7 +68,7 @@ export const updateFirebaseSettings = async (req: Request, res: Response) => {
     const userId = (req as any).user?.id || null;
     const incomingData = req.body;
 
-    const existingRecord = await prisma.setting.findUnique({
+    const existingRecord = await prisma.setting.findFirst({
       where: { settingKey: 'firebase-settings' }
     });
 
@@ -90,11 +90,25 @@ export const updateFirebaseSettings = async (req: Request, res: Response) => {
       updatedAt: new Date().toISOString()
     };
 
-    const record = await prisma.setting.upsert({
-      where: { settingKey: 'firebase-settings' },
-      update: { settingData: updatedData },
-      create: { settingKey: 'firebase-settings', settingData: updatedData }
-    });
+    let record: any;
+    if (existingRecord) {
+      record = await prisma.setting.update({
+        where: { id: existingRecord.id },
+        data: { settingData: updatedData }
+      });
+    } else {
+      try {
+        record = await prisma.setting.upsert({
+          where: { settingKey: 'firebase-settings' },
+          update: { settingData: updatedData },
+          create: { settingKey: 'firebase-settings', settingData: updatedData }
+        });
+      } catch {
+        record = await prisma.setting.create({
+          data: { settingKey: 'firebase-settings', settingData: updatedData }
+        });
+      }
+    }
 
     sysCache.del('public_fcm_config');
 

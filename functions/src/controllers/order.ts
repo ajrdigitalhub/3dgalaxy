@@ -10,6 +10,7 @@ import { logger } from '../utils/logger';
 import { calculateEffectiveItemPrice } from './payment';
 import { sysCache } from '../config/cache';
 import { generateOrderAccessToken, verifyOrderAccessToken, verifyOrderEmail } from '../utils/orderSecurity';
+import { getSettingsService } from '../modules/settings/settings.service';
 
 export const invalidateOrdersCache = () => {
   sysCache.clearPattern('admin_orders_');
@@ -1766,8 +1767,27 @@ export const resendOrderNotification = async (req: any, res: Response) => {
   }
 };
 
-export const getOrdersByCustomerId = async (req: Request, res: Response) => {
+export const getOrdersByCustomerId = async (req: any, res: Response) => {
   const { customerId } = req.params;
+  const user = req.user;
+  const normalizedRole = (user?.role || '').toLowerCase().replace(/[\s\-_]/g, '');
+  const isAdmin = ['admin', 'superadmin', 'manager', 'staff'].includes(normalizedRole);
+
+  // Enforce customer ownership authorization check
+  if (!isAdmin) {
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+    // Verify that the customer record belongs to the authenticated user
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { userId: true }
+    });
+    if (!customer || customer.userId !== user.id) {
+      return res.status(403).json({ success: false, error: 'Access denied: Cannot view other customers\' orders.' });
+    }
+  }
+
   try {
     const orders = await prisma.order.findMany({
       where: { customerId },

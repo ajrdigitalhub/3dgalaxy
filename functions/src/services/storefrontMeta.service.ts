@@ -440,7 +440,8 @@ export class StorefrontMetaService {
       : `Explore official ${brand.name} products at 3D Galaxy India. Buy genuine 3D printers, official spare parts, filaments & upgrade kits.`;
 
     const canonicalUrl = `${this.CANONICAL_ORIGIN}/brand/${brand.slug}`;
-    const imageUrl = brand.logoUrl ? this.resolveAbsoluteImageUrl(brand.logoUrl) : this.DEFAULT_IMAGE;
+    const brandLogo = (brand as any).logoUrl || brand.logo;
+    const imageUrl = brandLogo ? this.resolveAbsoluteImageUrl(brandLogo) : this.DEFAULT_IMAGE;
 
     const jsonLd = {
       "@context": "https://schema.org",

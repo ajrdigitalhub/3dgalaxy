@@ -71,7 +71,7 @@ async function runE2E() {
           if (guestBtn) (guestBtn as HTMLElement).click();
         });
         await new Promise((r) => setTimeout(r, 600));
-      } catch {}
+      } catch { }
     };
 
     // Verify title and product heading
@@ -165,7 +165,7 @@ async function runE2E() {
     console.log('[Step 6] Filling Shipping Address Details...');
     await page.evaluate(() => {
       const inputs = Array.from(document.querySelectorAll('input'));
-      
+
       const addr1 = inputs.find((i) => i.placeholder?.includes('Flat 302') || i.placeholder?.includes('House') || i.placeholder?.includes('Flat'));
       if (addr1) {
         addr1.value = 'Flat 402, Galaxy Tech Residency, MG Road';
@@ -304,7 +304,7 @@ async function runE2E() {
       const text = document.body.innerText;
       const urlParams = new URLSearchParams(window.location.search);
       const orderIdParam = urlParams.get('orderId');
-      
+
       const orderMatch = text.match(/(ORD-[A-Z0-9-]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
 
       return {
