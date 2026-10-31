@@ -159,7 +159,7 @@ export class CheckoutComponent implements OnInit {
 
   // Payment State
   availableGateways = signal<any[]>([]);
-  paymentMethod = signal<string>("RAZORPAY");
+  paymentMethod = signal<string>("CASHFREE");
   termsAccepted = signal(false);
 
   // Business / GST
@@ -335,24 +335,28 @@ export class CheckoutComponent implements OnInit {
         const methods = paySettings.paymentMethods || {};
         const actives: any[] = [];
 
-        const isRazorpayEnabled =
-          methods.razorpay?.enabled || paySettings.razorpayEnabled;
-        const isCashfreeEnabled = methods.cashfree?.enabled;
-        const isCodEnabled = methods.cod?.enabled || paySettings.codEnabled;
+        const isCashfreeEnabled = Boolean(methods.cashfree?.enabled);
+        const isRazorpayEnabled = methods.razorpay?.enabled !== undefined
+          ? Boolean(methods.razorpay.enabled)
+          : Boolean(paySettings.razorpayEnabled && paySettings.paymentMethods?.razorpay?.enabled !== false);
+        const isCodEnabled = methods.cod?.enabled !== undefined
+          ? Boolean(methods.cod.enabled)
+          : Boolean(paySettings.codEnabled);
 
-        if (isRazorpayEnabled)
-          actives.push({
-            gatewayCode: "RAZORPAY",
-            displayName: "Razorpay",
-            icon: "credit_card",
-            description: "Cards, Netbanking, UPI",
-          });
+        // Sequence: 1. Cashfree, 2. Razorpay, 3. COD
         if (isCashfreeEnabled)
           actives.push({
             gatewayCode: "CASHFREE",
             displayName: "Cashfree",
             icon: "account_balance",
             description: "Cards, UPI, Wallets",
+          });
+        if (isRazorpayEnabled)
+          actives.push({
+            gatewayCode: "RAZORPAY",
+            displayName: "Razorpay",
+            icon: "credit_card",
+            description: "Cards, Netbanking, UPI",
           });
         if (isCodEnabled)
           actives.push({
@@ -369,11 +373,10 @@ export class CheckoutComponent implements OnInit {
           !actives.find((a) => a.gatewayCode === this.paymentMethod())
         ) {
           if (actives.length > 0) {
-            const hasRazorpay = actives.find(
-              (a) => a.gatewayCode === "RAZORPAY",
-            );
+            const preferredDefault = (paySettings.defaultGateway || "CASHFREE").toUpperCase();
+            const matchedPref = actives.find((a) => a.gatewayCode === preferredDefault);
             this.paymentMethod.set(
-              hasRazorpay ? "RAZORPAY" : actives[0].gatewayCode,
+              matchedPref ? matchedPref.gatewayCode : actives[0].gatewayCode,
             );
           }
         }

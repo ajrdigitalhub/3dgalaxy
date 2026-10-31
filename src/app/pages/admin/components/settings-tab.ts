@@ -7900,6 +7900,9 @@ export class AdminSettingsTab implements OnDestroy {
       const methods = pgs.paymentMethods ? { ...pgs.paymentMethods } : {};
       methods[gateway] = { ...(methods[gateway] || {}), [key]: value };
       pgs.paymentMethods = methods;
+      if (gateway === 'razorpay' && key === 'enabled') {
+        pgs.razorpayEnabled = Boolean(value);
+      }
       return { ...d, paymentGatewaySettings: pgs };
     });
   }

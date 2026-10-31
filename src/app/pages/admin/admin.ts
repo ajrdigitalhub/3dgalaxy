@@ -936,7 +936,8 @@ export class AdminPanel implements OnInit {
         const pgs = this.settingsService.paymentGatewaySettings() || {};
         const methods = pgs.paymentMethods || {};
         const list: any[] = [];
-        if (methods.razorpay?.enabled || pgs.razorpayEnabled) {
+        const isRzp = methods.razorpay?.enabled !== undefined ? Boolean(methods.razorpay.enabled) : Boolean(pgs.razorpayEnabled);
+        if (isRzp) {
           list.push({
             id: "razorpay",
             name: "Razorpay",
